@@ -1,5 +1,6 @@
 module Cocoon
   module ViewHelpers
+    include ActionView::LookupContext::ViewPaths
 
 
     # this will show a link to remove the current association. This should be placed inside the partial.
@@ -49,7 +50,7 @@ module Cocoon
       method_name = ancestors.include?('SimpleForm::FormBuilder') ? :simple_fields_for : (ancestors.include?('Formtastic::FormBuilder') ? :semantic_fields_for : :fields_for)
       f.send(method_name, association, new_object, {:child_index => "new_#{association}"}.merge(render_options)) do |builder|
         partial_options = {form_name.to_sym => builder, :dynamic => true}.merge(locals)
-        render(partial, partial_options)
+        render_if_exists?(partial, partial_options)
       end
     end
 
@@ -153,6 +154,11 @@ module Cocoon
       # association???
       conditions = instance.respond_to?(:conditions) ? instance.conditions.flatten : []
       instance.klass.new(*conditions)
+    end
+
+    def render_if_exists?(*args)
+      render(*args) if lookup_context.find_all(args.fetch(:partial), [], true).any?
+      raise ActionView::MissingTemplate
     end
 
   end
